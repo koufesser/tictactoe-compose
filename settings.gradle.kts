@@ -6,6 +6,7 @@ pluginManagement {
     }
 
     plugins {
+        val ktorVersion = "2.1.3"
         val kotlinVersion = extra["kotlin.version"] as String
         val agpVersion = extra["agp.version"] as String
         val composeVersion = extra["compose.version"] as String
@@ -19,4 +20,4 @@ pluginManagement {
     }
 }
 
-include(":common", ":android", ":desktop")
+include(":server", ":desktop")

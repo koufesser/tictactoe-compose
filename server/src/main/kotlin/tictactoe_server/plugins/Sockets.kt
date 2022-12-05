@@ -83,8 +83,10 @@ fun Application.configureSockets() {
 
             try {
                 for (frame in incoming) {
-                    if (thisConnection.stopped)
+                    if (thisConnection.stopped) {
+                        println("Connection ${thisConnection.name} stopped")
                         break
+                    }
                     frame as? Frame.Text ?: continue
                     val receivedText = frame.readText()
                     println("${thisConnection.name}  [THREAD 1] got message: $receivedText")
