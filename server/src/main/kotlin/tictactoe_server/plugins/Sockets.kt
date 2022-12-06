@@ -1,16 +1,13 @@
-package tictactoe_server.plugins
+package tictactoeserver.plugins
 
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.lang.Thread.sleep
 import java.time.Duration
 import java.util.*
 import kotlin.concurrent.thread
@@ -21,7 +18,7 @@ object Sockets {
 
     @Synchronized
     fun getEnemy(connection: Connection) {
-        if (waitingConnection == null) {
+        waitingConnection ?: run {
             waitingConnection = connection
             return
         }
@@ -33,12 +30,10 @@ object Sockets {
     }
 
     @Synchronized
-    fun deleteConnection(connection: Connection): Boolean {
+    fun deleteConnection(connection: Connection) {
         if (waitingConnection == connection) {
             waitingConnection = null
-            return true
         }
-        return false
     }
 
     fun removeConnection(connection: Connection) {
@@ -46,10 +41,7 @@ object Sockets {
     }
 }
 
-fun sanityCheck() {
-
-}
-
+@Suppress("TOO_LONG_FUNCTION")
 fun Application.configureSockets() {
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
@@ -75,7 +67,9 @@ fun Application.configureSockets() {
                         println("${thisConnection.name} FOUND game")
                     }
                 }
-                if (thisConnection.stopped || game == null) {
+                if (thisConnection.stopped) {
+                    Sockets.deleteConnection(thisConnection)
+                    Sockets.removeConnection(thisConnection)
                     println("${thisConnection.name}  [thread 1]  GAME STOPPED")
                     thisConnection.stopped = true
                 }
@@ -97,7 +91,6 @@ fun Application.configureSockets() {
                         Command.UPDATE -> TODO()
                         Command.STOP -> {
                             thisConnection.stopped = true
-//                            sendEndingMessages("got command STOP", game = game, connection = thisConnection)
                         }
                     }
                 }
@@ -105,7 +98,6 @@ fun Application.configureSockets() {
                 println(e.localizedMessage)
                 println("${thisConnection.name} [THREAD 1] caught exception")
                 try {
-//                    sendEndingMessages("Enemy resigned", game, thisConnection)
                 } catch (_: Exception) {
                 }
             } finally {
@@ -118,11 +110,9 @@ fun Application.configureSockets() {
 
 suspend fun sendMessage(text: String, connection: Connection, game: Game? = null) {
     println("[[sending message]] ${connection.name} ----- $text")
-    val data: Answer = if (game != null) {
+    val data: Answer = game?.let {
         Answer(true, game.table, game.turn, game.getType(connection), text)
-    } else {
-        Answer(true, text = text)
-    }
+    } ?: Answer(true, text = text)
     connection.session.send(Json.encodeToString(data))
 }
 
@@ -140,15 +130,17 @@ suspend fun sendEndingMessages(text: String, game: Game, connection: Connection)
     try {
         connection.session.send(Json.encodeToString(data))
     } catch (_: Exception) {
+        println("[END] can not send msg to ${connection.name} ")
     }
     try {
         game.getEnemy(connection).session.send(Json.encodeToString(data))
     } catch (_: Exception) {
+        println("[END] can not send msg to ${connection.name} ")
     }
 }
 
 suspend fun processPress(msg: Msg, game: Game?, connection: Connection) {
-    if (game == null) {
+    game ?: run {
         sendMessage("Looking for enemy", connection)
         return
     }

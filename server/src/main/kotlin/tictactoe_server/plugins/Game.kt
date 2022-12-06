@@ -1,10 +1,9 @@
-package tictactoe_server.plugins
+package tictactoeserver.plugins
 
-
-class Game (val O : Connection, val X: Connection) {
-    var turn : KeyType = KeyType.O
+class Game(val O: Connection, val X: Connection) {
+    var turn: KeyType = KeyType.O
     val table = mutableListOf<KeyType>()
-    var winner : KeyType = KeyType.EMPTY
+    var winner: KeyType = KeyType.EMPTY
 
     init {
         repeat(9) {
@@ -28,7 +27,8 @@ class Game (val O : Connection, val X: Connection) {
     }
 
     @Synchronized
-    fun setValue(connection: Connection, position: Int) : Boolean {
+    @Suppress("FUNCTION_BOOLEAN_PREFIX")
+    fun setValue(connection: Connection, position: Int): Boolean {
         if (position < 0 || position > 8)
             return false
         val type = getType(connection)
@@ -50,7 +50,7 @@ class Game (val O : Connection, val X: Connection) {
 
     @Synchronized
     fun checkWin() {
-        if ( !table.any { it == KeyType.EMPTY }) {
+        if (!table.any { it == KeyType.EMPTY }) {
             winner = KeyType.DRAW
             return
         }
@@ -60,7 +60,7 @@ class Game (val O : Connection, val X: Connection) {
             for (p in d) {
                 if (type == KeyType.EMPTY)
                     type = table[p.digitToInt()]
-                if (table[p.digitToInt()] == KeyType.EMPTY  || type != table[p.digitToInt()]) {
+                if (table[p.digitToInt()] == KeyType.EMPTY || type != table[p.digitToInt()]) {
                     check = false
                     break
                 }
@@ -71,12 +71,13 @@ class Game (val O : Connection, val X: Connection) {
     }
 
   companion object {
-      fun emptyTable() = MutableList(9) {KeyType.EMPTY}
+      fun emptyTable() = MutableList(9) { KeyType.EMPTY }
   }
 }
 
+@Suppress("CONFUSING_IDENTIFIER_NAMING")
 enum class KeyType {
-    EMPTY, O, X, DRAW
+    DRAW, EMPTY, O, X
 }
 
 val directions = listOf("012", "345", "678", "036", "147", "258", "048", "246")
